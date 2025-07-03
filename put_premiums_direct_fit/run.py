@@ -134,10 +134,14 @@ def plot_premium(df, x, y, y_max = 0.2, y_min=0.001, scale='linear', show=True, 
 
   return fig
 
-def run():
+def run(show=False):
   df = load()
-  save_asset(plot_premium(df[df['period'] == 60], x='m', y='p_exp'), 'premiums_exp_60.png')
-  save_asset(plot_premium(df[df['period'] == 60], x='m', y='p_min'), 'premiums_min_60.png')
+
+  # 60d
+  report("**60 days**")
+  df60 = df[df['period'] == 60]
+  save_asset(plot_premium(df60, x='m', y='p_exp'), 'premiums_exp_60.png', show=show)
+  save_asset(plot_premium(df60, x='m', y='p_min'), 'premiums_min_60.png', show=show)
 
 if __name__ == "__main__":
   run()
