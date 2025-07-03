@@ -22,8 +22,8 @@ Strikes normalised so that mad(m) = 1 for all periods.
 **Report**
 
 premiums_exp_60.png
-[](readme/premiums_exp_60.png)
+![premiums_exp_60.png](readme/premiums_exp_60.png)
 
 premiums_min_60.png
-[](readme/premiums_min_60.png)
+![premiums_min_60.png](readme/premiums_min_60.png)
 
