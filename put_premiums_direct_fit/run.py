@@ -9,6 +9,7 @@ import inspect
 import math
 
 np.random.seed(0)
+show=True
 
 report("""Fitting Premiums for OTM Put from Historical Data.
 
@@ -23,7 +24,7 @@ Data, csv file:
   - p_min - realised put premium, using min price during option lifetime (upper bound, max possible
     for american option).
 
-**Strike normalisation**
+# Strike normalisation
 
 Strikes normalised so that mad(m) = 1 for all periods.
 
@@ -31,7 +32,6 @@ Strikes normalised so that mad(m) = 1 for all periods.
   vol_p(vol, period | P) = exp(p1 + p2*log(vol) + p3*log(vol)^2)
   P ~ min L2 mean_abs_dev(m) - 1
 
-**Report**
 """, False)
 
 def nvol(vol, period, params):
@@ -57,7 +57,7 @@ def load():
 
   return df
 
-def plot_premium(df, x, y, y_max = 0.2, y_min=0.001, scale='linear', show=True, model=None):
+def plot_premium(title, df, x, y, y_max = 0.2, y_min=0.001, model=None):
   vols = sorted(df['vol'].unique())
   n_vols = len(vols)
   colors = plt.get_cmap('coolwarm')(np.linspace(0, 1, n_vols))
@@ -85,63 +85,35 @@ def plot_premium(df, x, y, y_max = 0.2, y_min=0.001, scale='linear', show=True, 
   ax1.set_yscale('linear')
   ax2.set_yscale('log')
 
-  # Titles
-  ax1.set_title("Linear Scale")
-  ax2.set_title("Log Scale")
-
   for ax in (ax1, ax2):
     ax.set_ylim(y_min, y_max)
     ax.grid(True, which='both', ls=':')
 
-  fig.suptitle("Put Premiums")
+  fig.suptitle(title)
   plt.tight_layout()
-
-
-
-  # fig, ax = plt.subplots(figsize=(8, 6))
-  # cmap = plt.get_cmap('coolwarm')
-
-  # vols = sorted(df['vol'].unique())
-  # n_vols = len(vols)
-  # colors = cmap(np.linspace(0, 1, n_vols))
-
-  # for vi, (vol, grp) in enumerate(df.groupby('vol')):
-  #   ks = grp[x].values
-  #   prem = grp[y].values
-  #   color = colors[vi]
-  #   ax.plot(ks, prem, '--', color=color, alpha=0.7)
-  #   ax.scatter(ks, prem, color=color, s=5, alpha=0.9, label=f"vol={vol:.4f}")
-
-  #   # if model is not None:
-  #   #   model_vals = np.array([model(vol, k) for k in ks])
-  #   #   ax.plot(ks, model_vals, color=color, label=f"vol={vol:.4f}")
-
-  # ax.legend()
-  # ax.set_yscale(scale)
-  # ax.set_ylim(y_min)
-  # # ax.set_xlim(-2, 0)
-  # # ax.set_ylim(y_min, y_max)
-  # ax.grid(True, which='both', ls=':')
-
-  # # if model is not None:
-  # #   ax.legend()
-
-  # fig.suptitle("Put Premiums")
-  # plt.tight_layout()
 
   if show:
     plt.show()
 
-  return fig
+  save_asset(fig, title)
 
-def run(show=False):
+def run():
   df = load()
 
   # 60d
-  report("**60 days**")
   df60 = df[df['period'] == 60]
-  save_asset(plot_premium(df60, x='m', y='p_exp'), 'premiums_exp_60.png', show=show)
-  save_asset(plot_premium(df60, x='m', y='p_min'), 'premiums_min_60.png', show=show)
+  report("# Puts 60d")
+
+  plot_premium("Premiums 60d, Raw Strikes k=K/S", df60, x='k', y='p_exp', y_max=0.1)
+  plot_premium("Premiums 60d, Normalised Strikes m=ln(K/S)/nvol", df60, x='m', y='p_exp', y_max=0.1)
+
+  plot_premium("Premiums 60d, Strike Quantiles kq=CDF(k|vol)", df60, x='kq', y='p_exp', y_max=0.1)
+  report("#note quantiles produce linear curves")
+
+  # 60d exp vs min
+  report("# Exp vs Min for 60d Puts")
+
+  # plot_premium("Premiums Min 60d", df60, x='kq', y='p_min')
 
 if __name__ == "__main__":
   run()
