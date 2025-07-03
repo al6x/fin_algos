@@ -51,4 +51,4 @@ def save_asset(obj, name):
       f.write(obj)
   else:
     raise ValueError("Unsupported asset type: expected figure or string")
-  report(f'{name}\n[]({path})')
+  report(f'{name}\n![{name}]({path})')
