@@ -28,6 +28,16 @@ report_first_call = True
 def report(msg, print_=True):
   global report_first_call
 
+  def turn2space_intent_into4(text):
+    lines = text.splitlines()
+    fixed = []
+    for line in lines:
+      if line.startswith("  ") and not line.startswith("    "):
+        fixed.append("  " + line)
+      else:
+        fixed.append(line)
+    return "\n".join(fixed)
+
   if report_first_call:
     report_first_call = False
     if os.path.exists(report_path):
@@ -37,7 +47,7 @@ def report(msg, print_=True):
     print(msg)
   # os.makedirs(os.path.dirname(report_path), exist_ok=True)
   with open(report_path, "a") as f:
-    f.write(msg.rstrip() + "\n\n")
+    f.write(turn2space_intent_into4(msg).rstrip() + "\n\n")
 
 def save_asset(obj, name):
   # path = f'{report_path}/{name}'
