@@ -87,13 +87,15 @@ should be consistent across periods and volatilities, as distribution should be 
 
 ![Premium P, Norm Strike (log K - lmean_T)/scale_T, log scale](readme/premium-p-norm-strike-log-k-lmean-t-scale-t-log-scale.png)
 
-![Norm Premium P/mmean_T/scale_T, Norm Strike (log K - lmean_T)/scale_T](readme/norm-premium-p-mmean-t-scale-t-norm-strike-log-k-lmean-t-scale-t.png)
-
-![Norm Premium P/mmean_T/scale_T, Norm Strike (log K - lmean_T)/scale_T, log scale](readme/norm-premium-p-mmean-t-scale-t-norm-strike-log-k-lmean-t-scale-t-log-scale.png)
-
 ![Premium, Norm Strike P(R < K | vol)](readme/premium-norm-strike-p-r-k-vol.png)
 
 ![Premium, Norm Strike as P(R < K | vol), log scale](readme/premium-norm-strike-as-p-r-k-vol-log-scale.png)
+
+### Norm Premium
+
+![Norm Premium P/mmean_T/scale_T, Norm Strike (log K - lmean_T)/scale_T](readme/norm-premium-p-mmean-t-scale-t-norm-strike-log-k-lmean-t-scale-t.png)
+
+![Norm Premium P/mmean_T/scale_T, Norm Strike (log K - lmean_T)/scale_T, log scale](readme/norm-premium-p-mmean-t-scale-t-norm-strike-log-k-lmean-t-scale-t-log-scale.png)
 
 ![Norm Premium P/E[R]/Scale[R], Norm Strike P(R < K | vol)](readme/norm-premium-p-e-r-scale-r-norm-strike-p-r-k-vol.png)
 

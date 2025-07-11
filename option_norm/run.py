@@ -284,15 +284,6 @@ def chapter_premiums(df):
     df, x='m_true', x_title='Norm Strike', p='p_exp', c='c_exp', x_min=-4, x_max=4, y_min=0.001, y_max=0.2, yscale='log'
   )
 
-  plots.plot_premium_by_period(
-    "Norm Premium P/mmean_T/scale_T, Norm Strike (log K - lmean_T)/scale_T",
-    df, x='m_true', x_title='Norm Strike', p='np_exp', c='nc_exp', x_min=-4, x_max=4, y_min=0, y_max=1, yscale='linear'
-  )
-  plots.plot_premium_by_period(
-    "Norm Premium P/mmean_T/scale_T, Norm Strike (log K - lmean_T)/scale_T, log scale",
-    df, x='m_true', x_title='Norm Strike', p='np_exp', c='nc_exp', x_min=-4, x_max=4, y_min=0.005, y_max=1, yscale='log'
-  )
-
   # Normalised strikes as ITM probabilities
   plots.plot_premium_by_period(
     "Premium, Norm Strike P(R < K | vol)",
@@ -301,6 +292,17 @@ def chapter_premiums(df):
   plots.plot_premium_by_period(
     "Premium, Norm Strike as P(R < K | vol), log scale",
     df, x='kq', x_title='p', p='p_exp', c='c_exp', x_min=0, x_max=1, y_min=0.001, y_max=0.2, yscale='log'
+  )
+
+  report("# Norm Premium")
+
+  plots.plot_premium_by_period(
+    "Norm Premium P/mmean_T/scale_T, Norm Strike (log K - lmean_T)/scale_T",
+    df, x='m_true', x_title='Norm Strike', p='np_exp', c='nc_exp', x_min=-4, x_max=4, y_min=0, y_max=1, yscale='linear'
+  )
+  plots.plot_premium_by_period(
+    "Norm Premium P/mmean_T/scale_T, Norm Strike (log K - lmean_T)/scale_T, log scale",
+    df, x='m_true', x_title='Norm Strike', p='np_exp', c='nc_exp', x_min=-4, x_max=4, y_min=0.005, y_max=1, yscale='log'
   )
 
   plots.plot_premium_by_period(
