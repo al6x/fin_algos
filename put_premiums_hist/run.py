@@ -7,332 +7,325 @@ from scipy.optimize import minimize
 import matplotlib.pyplot as plt
 import inspect
 import math
-from scipy.stats import boxcox
-from scipy.special import inv_boxcox
+from misc import prune_params, fit_multi_init
+import plots
 
 np.random.seed(0)
-show=False
+show=True
+
 
 doc_before = r"""Exploring Put Premiums from Historical Data
 
-Premiums calculated as:
+  R = S_T/S_0, K = K/S_0
 
-  P_{eu}(K|Q_{vol}) = E[(K/S_T-S_T/S_0)^+|Q_{vol}]
+Premiums calculated for each period and vol quantile:
+
+  C_{eu}(K|Q_{vol}) = E[e^-rT (R-K)+|Q_{vol}]
+  P_{eu}(K|Q_{vol}) = E[e^-rT (K-R)+|Q_{vol}]
+
+Each return has its own risk free rate, so separate discount applied to each point, instead of appluing single discount
+to aggregated premium.
+
 """
 
 doc_after = """
-# Data
+  # Data
 
-  - period - period, days
-  - vol - current volatility as std (in scale unit, not variance).
-  - vol_dc - volatility decile 1..10
-  - k - strike
-  - kq - quantile or strike
-  - p_exp - realised put premium using price at expiration (lower bound, european option)
-  - p_min - realised put premium, using min price during option lifetime (upper bound, max possible
-    for american option).
+    - period - period, days
+
+    - vol_dc - volatility decile 1..10
+    - vol    - current moving daily volatility, as EWA(log(r)^2)^0.5, (scale unit, not variance), median of vol_dc group.
+
+    - lmean_t2  - mean[log R]
+    - scale_t2  - mean_abs_dev(log R - lmean_t2) * sqrt(pi/2)
+
+    - k  - strike
+    - kq - strike quantile
+
+    - p_exp - realised put premium using price at expiration (lower bound, european option)
+    - p_max - realised put premium, using min price during option lifetime (upper bound, max possible
+      for american option).
+    - p_itm - realised probability of put ITM
+
+    - c_exp - realised call premium using price at expiration (lower bound, european option)
+    - c_max - realised call premium, using max price during option lifetime (upper bound, max possible
+      for american option).
+    - c_itm - realised probability of call ITM
+
+
+  Daily prices for 250 stocks all starting from 1973 till 2025, stats aggregated with moving window with step 30d, so
+  larger periods have overlapping. Dividends ignored. Data has survivorship bias, no bankrupts.
+
+  Data adjusted by adding bankrupts. The **annual bankruptsy probability** conditional on company volatility with total
+  annual rate P(b|T=365) = 0.5% to drop to x0.1.
 """
-
-def make_normalise_vol(df):
-  report("""
-    # Strike normalisation
-
-    Making mad(m) = 1 for all periods.
-
-      m = log(k)/(vol*vol_p(period | P))
-      vol_p(period | P) = exp(p1 + p2*log(period) + p3*log(period)^2)
-      P ~ min L2 mean_abs_dev(m) - 1
-  """)
-  def normalise(vol, period, params):
-    p1, p2, p3 = params
-    lp = np.log(period)
-    return df['vol']*np.exp(p1 + p2*lp + p3*lp**2)
-
-  def fit(df):
-    def loss(params):
-      m = np.log(df['k']) / (normalise(df['vol'], df['period'], params))
-      mad = np.mean(np.abs(m - np.median(m)))
-      return (mad - 1)**2
-    res = minimize(loss, x0=[0.0, 1.0, 0.0], method='Nelder-Mead')
-    return tuple(res.x)
-
-  params = cached('normalise_vol_params', lambda: fit(df))
-  report(f"Found params: {', '.join(f'{x:.4f}' for x in params[:3])}")
-
-  return lambda vol, period: normalise(vol, period, params)
-
-def make_normalise_premium_pow_t(df):
-  report("""
-    # Premium normalisation
-
-    Making mean premium for k=1 same as 30d period mean.
-
-      np_exp = p_exp / (period/30)**pow
-      pow ~ min mean(p_exp|k=1,period) - mean(p_exp|k=1,period=30d)
-  """, False)
-
-  v = df.loc[df.k==1, ['period','p_exp']]
-
-  def normalise(prem, period, a):
-    return prem / (period/30)**a
-
-  def fit(df):
-    periods = v.period.unique()
-    def loss(x):
-      pow = float(x[0])
-      s = normalise(v.p_exp, v.period, pow)
-      m = s.groupby(v.period).mean()
-      # sum squared diff vs base‐period mean
-      return sum((m.loc[p] - m.loc[30])**2 for p in periods)
-    res = minimize(loss, x0=[0.5], method='Nelder-Mead')
-    return float(res.x[0])
-
-  a = cached('normalise_premium_pow_t', lambda: fit(df))
-  report(f"Found pow: {a:.4f}")
-  return lambda p, per: p / (np.array(per)/30)**a
 
 def load():
   df = pd.read_csv('data/put_premiums.csv')
-
-  # Normalising strikes
-  normalise_vol = make_normalise_vol(df)
-  nvol = normalise_vol(df['vol'], df['period'])
-  df['m'] = np.log(df['k']) / nvol
-
-  # Normalising premiums, so that mean and mad = 1 for each period and k=1
-  # normalise_premium = make_normalise_premium_log_z_score(df)
-  normalise_premium = make_normalise_premium_pow_t(df)
-  df['np_exp'] = normalise_premium(df['p_exp'], df['period'])
-  df['np_min'] = normalise_premium(df['p_min'], df['period'])
-
   return df
 
-def plot_premium(title, df, x, y, x_min=-5, x_max=1, y_min=0.001, y_max = 0.2):
-  vols = sorted(df['vol'].unique())
-  n_vols = len(vols)
-  colors = plt.get_cmap('coolwarm')(np.linspace(0, 1, n_vols))
+def estimate_mmean(df):
+  report("""
+    # Mult Mean E[R]
 
-  # fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6), sharex=True, sharey=True)
-  fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
+    Estimating from historicaly realised
 
-  for vi, (dc, grp) in enumerate(df.groupby('vol_dc')):
-    ks = grp[x].values
-    prem = grp[y].values
-    color = colors[vi]
-    vol = grp['vol'].iloc[0]    # actual volatility for this decile
+      observed = exp(mmean_t2 + 0.5*scalep_t2^2)
+      mmean    = model(period, vol | P)
+      P ~ min L2[weight (log mmean - log observed)]
 
-    # Plot on linear axis
-    ax1.plot(ks, prem, '--', color=color, alpha=0.7)
-    ax1.scatter(ks, prem, color=color, s=5, alpha=0.9, label=f"vol={vol:.4f}")
+    Tunning:
 
-    # Plot on log axis
-    ax2.plot(ks, prem, '--', color=color, alpha=0.7)
-    ax2.scatter(ks, prem, color=color, s=5, alpha=0.9)
+    Positive scale used, to avoid inflating mean by negative skew, although effect is minimal.
 
-  # Legends
-  ax1.legend()
+    Loss is weighted, to make errors equal across vols and periods.
 
-  # Y scales
-  ax1.set_yscale('linear')
-  ax2.set_yscale('log')
+    1 and 9 vol deciles boost, as they look to be well shaped. As a side effect, the model underestimates mean at
+    long >730d periods, it's desired, because the dataset has survivorship bias.
 
-  for ax in (ax1, ax2):
-    ax.set_xlim(x_min, x_max)
-    ax.set_ylim(y_min, y_max)
-    ax.grid(True, which='both', ls=':')
+    Vol decile 10 ignored, it's too noisy. As result model understimates mean for 10 vol decile, it's desired.
 
-  fig.suptitle(title)
-  plt.tight_layout()
+    Longer periods have slightly lower weight, because they calculated with overlapping step 30d.
 
-  if show:
-    plt.show()
+      weight = 1/period^2/vol^0.5
+      weight[vol_dc in (1, 9)] *= 1.5
+  """)
 
-  save_asset(fig, title)
+  # Only unique subset of the data needed, it's same across different strikes
+  df = df[df.vol_dc != 10] # Too noisy, ignoring
+  df = df[['period', 'lmean_t2', 'scalep_t2', 'vol', 'vol_dc']].drop_duplicates().sort_values('period').reset_index(drop=True)
 
-def plot_premium_all_(title, df, x, y, y_max=0.2, y_min=0.001, x_min=-5, x_max=1.0, scale='linear'):
-  periods = sorted(df['period'].unique())
-  ncols = 3
-  nrows = int(np.ceil(len(periods) / ncols))
+  lmmean_observed = df['lmean_t2'] + 0.5*df['scalep_t2']**2 # observed E[R]
 
-  vols = sorted(df['vol'].unique())
-  n_vols = len(vols)
-  colors = plt.get_cmap('coolwarm')(np.linspace(0, 1, n_vols))
+  def lmmean_(period, vol, P):
+    ty = period/365
+    center_vol = P[1]
+    return (
+      P[0] + P[2]*ty + P[3]*vol*ty # General trend
+      + P[4]*(np.abs(center_vol-vol)/ty)**0.25 # Making spread sensitive to volatility difference from the center
+      + P[5]*ty**2 # Bending curve down slightly for long periods
+    )
 
-  fig, axes = plt.subplots(
-    nrows, ncols,
-    figsize=(ncols * 5, nrows * 4),
-    sharex=True, sharey=True
+  # Make errors equal across vols and periods.
+  # Boosting 1 and 9 deciles, as they look to be well shaped. Also, the dataset has survivorship bias, and
+  # boosting 1 quantile has positive effect by lowering the mean of higher quantiles at >730d periods.
+  weights = 1/df['period']**2/df['vol']**0.5
+  weights[df['vol_dc'].isin([1, 9])] *= 1.5
+  weights = weights / np.mean(weights)
+  def loss(params):
+    lmmean = lmmean_(df['period'], df['vol'], params)
+    errors = np.abs((lmmean - lmmean_observed)*weights)**2
+    return 1e6*np.mean(errors)
+
+  init = [-0.0012, 0.0075, 0.0435, 3.4766, 0.0035, -0.0062]
+  def fit(loss, init):
+    # return minimize(loss, x0=init, method='L-BFGS-B')
+    return minimize(loss, x0=init, method='Powell')
+
+  # prune_params(loss=loss, fit=fit, init=init, min_params=4)
+  # Best 4-param model loss=1.3821, kept=(1, 2, 3, 4)
+  # Best 5-param model loss=1.1764, kept=(0, 1, 2, 3, 4)
+  # Best 6-param model loss=1.1718, kept=(0, 1, 2, 3, 4, 5)
+
+  # inits = []
+  # P = tuple(fit_multi_init(loss, inits, fit))
+
+  # P = tuple(fit(loss, init).x)
+  P = cached('lmmean', lambda: tuple(fit(loss, init).x))
+  report(f"Found params: [{', '.join(f'{x:.4f}' for x in P)}], loss: {loss(P):.4f}")
+
+  return lambda period, vol: np.exp(lmmean_(period, vol, P))
+
+def estimate_scale(df):
+  report("""
+    # Scale at expiration
+
+    Estimating from historicaly realised
+
+      scale = model(period, vol | P)
+      P ~ min L2[weight(scale - scale_t2)]
+
+    Tunning:
+
+    - Loss is weighted, to make errors equal across vols and periods.
+    - Longer periods have slightly lower weight, because they calculated with overlapping step 30d.
+
+      weight = 1/scale_t2/period^0.5
+  """)
+
+  # We only need an unique subset of the data, it's the same across different strikes
+  df = df[['period', 'scale_t2', 'vol', 'vol_dc']].drop_duplicates().sort_values('period').reset_index(drop=True)
+
+  def scale_(period, vol, P):
+    lp, lv = np.log(period), np.log(vol)
+    return np.exp(
+      P[0] + P[1]*lv + P[2]*lp + P[3]*lp**2 + P[4]*lv**2 + P[5]*lv*lp + P[6]*lv**3 + P[7]*lv*lp**2 + P[8]*lv**2*lp
+    )
+
+  # Optimal model of 7 params
+  def scale7_(period, vol, P):
+    lp, lv = np.log(period), np.log(vol)
+    return np.exp(
+      P[0] + P[1]*lv + P[2]*lp + P[3]*lp**2 + P[4]*lv**2 + P[7]*lv*lp**2 + P[8]*lv**2*lp
+    )
+  scale_ = scale7_
+
+  # Make errors equal across vols and periods
+  # Lower weight of loner periods slightly, because they calculated with overlapping step 30d and have more
+  # noise (maybe use a better weighting approach).
+  weights = 1/df.scale_t2/np.sqrt(df.period)
+  weights = weights / np.mean(weights)
+  def loss(params):
+    scale = scale_(df['period'], df['vol'], params)
+    # reg = np.sum(np.abs(params[3:]))  # Penalise only higher-order terms
+    return 1e6*np.mean((weights*(scale - df.scale_t2))**2) #+ 0.5*reg
+
+  init = [-0.5207, 1.9198, 1.2038, -0.1444, 0.2550, 0.0000, 0.0000, -0.0349, -0.0437]
+  def fit(loss, init):
+    return minimize(loss, x0=init)
+
+  # prune_params(loss=loss, fit=fit, init=init, min_params=4)
+  # Best 4-param model loss=3.9269, kept=(1, 2, 4, 8)
+  # Best 5-param model loss=3.2666, kept=(0, 1, 4, 5, 8)
+  # Best 6-param model loss=1.9299, kept=(1, 2, 3, 4, 7, 8)
+  # Best 7-param model loss=1.4333, kept=(0, 1, 2, 3, 4, 7, 8)
+  # Best 8-param model loss=1.4260, kept=(0, 1, 2, 3, 4, 5, 7, 8)
+  # Best 9-param model loss=1.4209, kept=(0, 1, 2, 3, 4, 5, 6, 7, 8)
+
+  # P = tuple(fit(loss, init).x)
+  P = cached('scale', lambda: tuple(fit(loss, init).x))
+  report(f"Found params: [{', '.join(f'{x:.4f}' for x in P)}], loss: {loss(P):.4f}")
+
+  return lambda period, vol: scale_(period, vol, P)
+
+def chapter_mmean(df, mmean_):
+  plots.plot_lmean(
+    "Mult Mean E[R], by period and vol (model - solid lines)",
+    df, mmean_
   )
 
-  for pi, period in enumerate(periods):
-    row = pi // ncols
-    col = pi % ncols
-    ax  = axes[row, col]
+  plots.plot_lmean_heatmap(
+    "Mult Mean E[R]",
+    mmean_=mmean_, df=df,
+    vol_range=(df['vol'].min(), df['vol'].max()), period_range=(df['period'].min(), df['period'].max()),
+  )
+  return mmean_
 
-    sub = df[df['period'] == period]
-    for vi, vol in enumerate(vols):
-      grp   = sub[sub['vol']==vol]
-      ks    = grp[x].values
-      prem  = grp[y].values
-      color = colors[vi]                # direct by index
+def chapter_scale(df, scale_):
+  plots.plot_estimated_scale('Estimated Scale (at expiration)', df, scale_)
 
-      ax.plot(  ks, prem, '--', color=color, alpha=0.7)
-      ax.scatter(ks, prem,       color=color, s=5, alpha=0.9, label=f"vol={vol:.4f}")
+  plots.plot_vols_by_periods('Vol by period, as EMA((log r)^2)^0.5', df)
 
-    ax.set_title(f"{period}d")
-    # if pi == 0:
-    #   ax.legend(loc='upper left', fontsize='small')
-    ax.set_yscale(scale)
-    ax.set_ylim(y_min, y_max)
-    ax.set_xlim(x_min, x_max)
-    ax.grid(True, which='both', ls=':')
+def chapter_skew(df):
+  df = df[['period', 'lmean_t2', 'scale_t2', 'scalep_t2', 'scalen_t2', 'vol_dc']].drop_duplicates() \
+    .sort_values(['period', 'vol_dc'])
+  mmean = np.exp(df['lmean_t2'] + 0.5*df['scale_t2']**2)
+  mmeanp = np.exp(df['lmean_t2'] + 0.5*df['scalep_t2']**2)
 
-  fig.suptitle(title)
-  plt.tight_layout()
+  report("# Skew")
+  plots.plot_mmean_ratio("scalen_t2 vs scalep_t2, x - sort(period,vol)", df['scale_t2']/df['scalep_t2'])
+  plots.plot_mmean_ratio("MMean E[R] with scale vs scalep, x - sort(period,vol)", mmean/mmeanp)
 
-  if show:
-    plt.show()
+def chapter_normalised_strikes(df, scale_, mmean_):
+  report("""
+    # Strike normalisation
 
-  save_asset(fig, title)
+      mmean = predict_mmean(period, vol | P)
+      scale = predict_scale(period, vol | P)
+      loc = log mmean - 0.5*scale^2
+      m = (log(K) - loc)/scale
 
-def plot_premium_all(title, df, x, y, y_max=0.2, y_min=0.001, x_min=-5, x_max=1.0):
-  plot_premium_all_(f'{title} (lin)', df, x, y, x_min=x_min, x_max=x_max, y_max=y_max, y_min=y_min, scale='linear')
-  plot_premium_all_(f'{title} (log)', df, x, y, x_min=x_min, x_max=x_max, y_max=y_max, y_min=y_min, scale='log')
+    Compared to true normalised strike
 
-def plot_ratio(title, df, x):
-  vols = sorted(df['vol'].unique())
-  n_vols = len(vols)
-  colors = plt.get_cmap('coolwarm')(np.linspace(0, 1, n_vols))
+      m_true = (log(K) - mean_t2) / scale_t2
 
-  fig, ax = plt.subplots(figsize=(8, 6))
+    Normalising strike using mean, scale is biased as doesn't account for the distribution shape (skew, tails). But
+    should be consistent across periods and volatilities, as distribution should be similar.
+  """)
+  scales = scale_(df['period'], df['vol'])
+  mmeans = mmean_(df['period'], df['vol'])
+  df['m']      = (np.log(df['k']) - (np.log(mmeans) - 0.5*scales**2)) / scales
 
-  for vi, (dc, grp) in enumerate(df.groupby('vol_dc')):
-    ks = grp[x].values
-    ratio = (grp['p_min'] / grp['p_exp']).values
-    color = colors[vi]
-    vol = grp['vol'].iloc[0]
+  df['m_true'] = (np.log(df['k']) - df['lmean_t2']) / df['scale_t2']
 
-    # Plot on linear axis
-    ax.plot(ks, ratio, '--', color=color, alpha=0.7)
-    ax.scatter(ks, ratio, color=color, s=5, alpha=0.9, label=f"vol={vol:.4f}")
-
-  # Legend
-  ax.legend()
-
-  # Y scale and limits
-  # ax.set_xscale('log')
-  ax.set_ylim(1, 2.5)
-  ax.grid(True, which='both', ls=':')
-
-  fig.suptitle(title)
-  plt.tight_layout()
-
-  if show:
-    plt.show()
-
-  save_asset(fig, title)
-
-def plot_ratio_all(title, df, x, y_min=1.0, y_max=5):
-  periods = sorted(df['period'].unique())
-  ncols = 3
-  nrows = int(np.ceil(len(periods) / ncols))
-
-  vols   = sorted(df['vol'].unique())
-  n_vols = len(vols)
-  colors = plt.get_cmap('coolwarm')(np.linspace(0, 1, n_vols))
-
-  fig, axes = plt.subplots(
-    nrows, ncols,
-    figsize=(ncols * 5, nrows * 4),
-    sharex=True, sharey=True
+  plots.plot_strikes_vs_strike_quantiles_by_period(
+    "Normalised Strikes vs True Normalised Strikes",
+    df, x='m', y='m_true', min=-4, max=4
   )
 
-  for pi, period in enumerate(periods):
-    row = pi // ncols
-    col = pi % ncols
-    ax  = axes[row, col]
+def chapter_premiums(df):
+  report("# Premium")
+  df = df.copy()
+  mmeans = np.exp(df['lmean_t2'] + 0.5*df['scalep_t2']**2)
+  scales = df['scale_t2']
 
-    sub = df[df['period'] == period]
-    for vi, vol in enumerate(vols):
-      grp = sub[sub['vol'] == vol]
-      if grp.empty:
-        continue
+  df['np_exp'] = df['p_exp']/mmeans/scales
+  df['nc_exp'] = df['c_exp']/mmeans/scales
 
-      ks    = grp[x].values
-      ratio = (grp['p_min'] / grp['p_exp']).values
-      color = colors[vi]                # direct by index
-
-      ax.plot(  ks, ratio, '--', color=color, alpha=0.7)
-      ax.scatter(ks, ratio,       color=color, s=5, alpha=0.9, label=f"vol={vol:.4f}")
-
-    ax.set_title(f"{period}d")
-    ax.set_ylim(y_min, y_max)
-    ax.grid(True, which='both', ls=':')
-
-  fig.suptitle(title)
-  plt.tight_layout()
-
-  if show:
-    plt.show()
-
-  save_asset(fig, title)
-
-def run_60d(df):
-  df = df[df['period'] == 60]
-  report("# Puts 60d")
-
-  plot_premium(
-    "Premiums 60d, Raw Strikes k=K/S",
-    df, x='k', y='p_exp', x_min=0.5, x_max=1, y_min=0.001, y_max=0.1
+  plots.plot_premium_by_period(
+    "Premium P, Raw Strike K",
+    df, x='k', x_title='k', p='p_exp', c='c_exp', x_min=0.5, x_max=2, y_min=0, y_max=0.2, yscale='linear', xscale='log'
   )
-  plot_premium(
-    "Premiums 60d, Normalised Strikes m=ln(K/S)/nvol",
-    df, x='m', y='p_exp', x_min=-5, x_max=0, y_min=0.001, y_max=0.1
-  )
-  plot_premium(
-    "Premiums 60d, Strike Quantiles kq=CDF(k|vol)",
-    df, x='kq', y='p_exp', x_min=0, x_max=0.5, y_max=0.1
-  )
-  report("#note quantiles produce linear curves")
-  plot_premium(
-    "Premiums 60d, Norma Strikes and Norm Premium",
-    df, x='m', y='np_exp', x_min=-5, x_max=0, y_min=0.001, y_max=0.1
+  plots.plot_premium_by_period(
+    "Premium P, Raw Strike K, log scale",
+    df, x='k', x_title='k', p='p_exp', c='c_exp', x_min=0.5, x_max=2, y_min=0.001, y_max=0.5, yscale='log', xscale='log'
   )
 
-  plot_ratio("Ratio of Premium Min / Exp, 60d", df, x='m')
-  report("#note bounds for american put: eu < am < 2eu")
-
-def run_all(df):
-  df = df[df['period'] != 1095]
-  report("# Puts all periods")
-
-  plot_premium_all(
-    "Premiums, Raw Strikes k=K/S",
-    df, x='k', y='p_exp', x_min=0.5, x_max=1, y_min=0.001, y_max=0.1
+  # Normalised strikes as z score
+  plots.plot_premium_by_period(
+    "Premium P, Norm Strike (log K - lmean_T)/scale_T",
+    df, x='m_true', x_title='Norm Strike', p='p_exp', c='c_exp', x_min=-4, x_max=4, y_min=0, y_max=0.2, yscale='linear'
   )
-  plot_premium_all(
-    "Premiums, Norm Strikes m=ln(K/S)/nvol",
-    df, x='m', y='p_exp', x_min=-5, x_max=0, y_min=0.001, y_max=0.1
-  )
-  plot_premium_all(
-    "Premiums, Strike Quantiles kq=CDF(k|vol)",
-    df, x='kq', y='p_exp', x_min=0, x_max=0.5, y_max=0.1
-  )
-  plot_premium_all(
-    "Premiums, Norm Strikes and Norm Premiums",
-    df, x='m', y='np_exp', x_min=-5, x_max=0, y_min=0.001, y_max=0.1
+  plots.plot_premium_by_period(
+    "Premium P, Norm Strike (log K - lmean_T)/scale_T, log scale",
+    df, x='m_true', x_title='Norm Strike', p='p_exp', c='c_exp', x_min=-4, x_max=4, y_min=0.001, y_max=0.2, yscale='log'
   )
 
-  plot_ratio_all("Ratio of Premium Min / Exp", df, x='m')
-  report("#note bounds for american put: eu < am < 2eu")
+  plots.plot_premium_by_period(
+    "Norm Premium P/mmean_T/scale_T, Norm Strike (log K - lmean_T)/scale_T",
+    df, x='m_true', x_title='Norm Strike', p='np_exp', c='nc_exp', x_min=-4, x_max=4, y_min=0, y_max=1, yscale='linear'
+  )
+  plots.plot_premium_by_period(
+    "Norm Premium P/mmean_T/scale_T, Norm Strike (log K - lmean_T)/scale_T, log scale",
+    df, x='m_true', x_title='Norm Strike', p='np_exp', c='nc_exp', x_min=-4, x_max=4, y_min=0.005, y_max=1, yscale='log'
+  )
+
+  # Normalised strikes as ITM probabilities
+  plots.plot_premium_by_period(
+    "Premium, Norm Strike P(R < K | vol)",
+    df, x='kq', x_title='p', p='np_exp', c='nc_exp', x_min=0, x_max=1, y_min=0, y_max=0.2
+  )
+  plots.plot_premium_by_period(
+    "Premium, Norm Strike as P(R < K | vol), log scale",
+    df, x='kq', x_title='p', p='p_exp', c='c_exp', x_min=0, x_max=1, y_min=0.001, y_max=0.2, yscale='log'
+  )
+
+  plots.plot_premium_by_period(
+    "Norm Premium P/E[R]/Scale[R], Norm Strike P(R < K | vol)",
+    df, x='kq', x_title='p', p='np_exp', c='nc_exp', x_min=0, x_max=1, y_min=0, y_max=1
+  )
+  plots.plot_premium_by_period(
+    "Norm Premium P/E[R]/Scale[R], Norm Strik P(R < K | vol), log scale",
+    df, x='kq', x_title='p', p='np_exp', c='nc_exp', x_min=0, x_max=1, y_min=0.005, y_max=1, yscale='log'
+  )
+
+  plots.plot_ratio_by_period("Ratio of Premium Min / Exp (calls solid)", df)
+  report("#note bounds for american call: eu < am < 2eu")
 
 def run():
   report(doc_before, False)
 
   df = load()
+  df = df[(df.period != 1095)]
 
-  run_60d(df)
-  run_all(df)
+  mmean_ = estimate_mmean(df)
+  scale_ = estimate_scale(df)
+
+  chapter_mmean(df, mmean_)
+  chapter_scale(df, scale_)
+  chapter_normalised_strikes(df, scale_, mmean_)
+  chapter_premiums(df)
+  chapter_skew(df)
 
   report(doc_after, False)
 

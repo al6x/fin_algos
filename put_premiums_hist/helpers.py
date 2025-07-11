@@ -29,20 +29,13 @@ report_first_call = True
 def report(msg, print_=True):
   global report_first_call
 
-  def turn2space_intent_into4(text):
-    lines = text.splitlines()
-    fixed = []
-    for line in lines:
-      if line.startswith("  ") and not line.startswith("    "):
-        fixed.append("  " + line)
-      else:
-        fixed.append(line)
-    return "\n".join(fixed)
+  def turn2space_indent_into4(text):
+    return text.replace('\n  ', '\n    ')
 
   def replace_h1_with_h3(text):
     lines = text.splitlines()
     fixed = [
-      line.replace('# ', '### ', 1) if line.lstrip().startswith('# ') else line
+      line.replace('\n# ', '\n### ', 1) if line.lstrip().startswith('# ') else line
       for line in lines
     ]
     return '\n'.join(fixed)
@@ -63,10 +56,12 @@ def report(msg, print_=True):
   msg = dedent(msg)
 
   if print_:
-    print(msg)
+    indented_msg = "\n".join("  " + line for line in msg.splitlines())
+    print(indented_msg)
+
   # os.makedirs(os.path.dirname(report_path), exist_ok=True)
   with open(report_path, "a") as f:
-    msg = turn2space_intent_into4(replace_h1_with_h3(msg)).rstrip()
+    msg = turn2space_indent_into4(replace_h1_with_h3(msg)).rstrip()
     f.write(msg + "\n\n")
 
 def save_asset(obj, name):
@@ -91,10 +86,11 @@ def save_asset(obj, name):
 def cached(key, get):
   path = f"./tmp/cache/{key}-{datetime.now():%Y-%m-%d}.pkl"
   if os.path.exists(path):
-    print(f"{key} loaded from cache")
+    print(f"  {key} loaded from cache")
     with open(path, 'rb') as f: return pickle.load(f)
-  print(f"{key} calculating")
+  print(f"  {key} calculating")
   result = get()
   os.makedirs(os.path.dirname(path), exist_ok=True)
   with open(path, 'wb') as f: pickle.dump(result, f)
   return result
+

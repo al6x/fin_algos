@@ -1,0 +1,59 @@
+
+def plot_strikes_vs_strike_quantiles(title, df, x, y, min, max):
+  # replace subplot grid with single axis
+  fig, ax = plt.subplots(figsize=(8, 6))
+
+  # build vols/colors once from full df
+  vol_dcs = sorted(df['vol_dc'].unique())
+  colors = plt.get_cmap('coolwarm')(np.linspace(0, 1, len(vol_dcs)))
+
+  # plot all vol deciles on one log-scaled chart
+  for pi, period in enumerate(sorted(df['period'].unique())):
+    sub = df[df['period'] == period]
+    for vi, (dc, grp) in enumerate(sub.groupby('vol_dc')):
+      ks = grp[x].values
+      qs = grp[y].values
+      qs = np.where(qs > 0.5, 1 - qs, qs)
+      qs = qs*1.4**pi
+      c = colors[vi]
+      ax.plot(ks, qs, color=c, alpha=0.7, label=f"{period}-{dc}")
+
+      # ax.plot(ks, prem, '--', color=c, alpha=0.7)
+      # ax.scatter(ks, prem, color=c, s=5, alpha=0.9, label=f"{period}-{dc}")
+
+  # ax.set_yscale('log')
+  # ax.set_xlim(min, max)
+  # ax.set_ylim(min, max)
+  ax.grid(True, which='both', ls=':')
+  ax.set_xlabel(x)
+  ax.set_ylabel(y)
+  ax.set_title(title)
+  ax.set_xlabel('NStrike')
+  ax.set_ylabel('True NStrike')
+  # ax.set_ylabel('Quantile x 1.4^period (to separate lines)')
+
+  handles = [Line2D([0], [0], color=colors[i], lw=2) for i in range(len(vol_dcs))]
+  ax.legend(handles, vol_dcs, title='Vol Decile')
+
+  plt.tight_layout()
+
+  if show:
+    plt.show()
+  save_asset(fig, title)
+
+
+def make_normalise_vol(df):
+  report("Building vectorised lookup: (period, vol) → lr_mdad")
+
+  # Build Series indexed by (period, vol)
+  lookup = (
+    df.drop_duplicates(subset=['period', 'vol'])
+      .set_index(['period', 'vol'])['lr_mdad']
+  )
+
+  # Normaliser: vectorised lookup for Series or scalars
+  def normalise(vol, period):
+    keys = list(zip(period, vol))  # build list of (period, vol) pairs
+    return lookup.loc[keys].values
+
+  return normalise
