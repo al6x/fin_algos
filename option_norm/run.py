@@ -14,7 +14,8 @@ np.random.seed(0)
 show=True
 
 
-doc_before = r"""Exploring Put Premiums from Historical Data
+doc_before = r"""
+Option Normalisation using Historical Data
 
   R = S_T/S_0, K = K/S_0
 
@@ -25,7 +26,6 @@ Premiums calculated for each period and vol quantile:
 
 Each return has its own risk free rate, so separate discount applied to each point, instead of appluing single discount
 to aggregated premium.
-
 """
 
 doc_after = """

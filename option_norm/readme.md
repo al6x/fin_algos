@@ -1,4 +1,4 @@
-Exploring Put Premiums from Historical Data
+Option Normalisation using Historical Data
 
     R = S_T/S_0, K = K/S_0
 
