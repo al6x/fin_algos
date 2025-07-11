@@ -34,6 +34,12 @@ Longer periods have slightly lower weight, because they calculated with overlapp
 
 Found params: [-0.0011, 0.0075, 0.0427, 3.2455, 0.0037, -0.0043], loss: 1.1690
 
+### Mean E[R | T, vol]
+
+![Mean E[R], by period and vol (model - solid lines)](readme/mean-e-r-by-period-and-vol-model-solid-lines.png)
+
+![Mean E[R]](readme/mean-e-r.png)
+
 ### Estimating Scale[R]
 
 Estimating from historicaly realised
@@ -48,12 +54,6 @@ Longer periods have slightly lower weight, because they calculated with overlapp
     weight = 1/scale_t2/period^0.5
 
 Found params: [-0.5207, 1.9198, 1.2038, -0.1444, 0.2549, 0.0000, 0.0000, -0.0349, -0.0437], loss: 1.6550
-
-### Mean E[R | T, vol]
-
-![Mean E[R], by period and vol (model - solid lines)](readme/mean-e-r-by-period-and-vol-model-solid-lines.png)
-
-![Mean E[R]](readme/mean-e-r.png)
 
 ### Scale[R | T, vol]
 

@@ -324,10 +324,11 @@ def run():
   df = df[(df.period != 1095)]
 
   mmean_ = estimate_mmean(df)
-  scale_ = estimate_scale(df)
-
   chapter_mmean(df, mmean_)
+
+  scale_ = estimate_scale(df)
   chapter_scale(df, scale_)
+
   chapter_normalised_strikes(df, scale_, mmean_)
   chapter_premiums(df)
   chapter_skew(df)
