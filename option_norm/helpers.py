@@ -45,7 +45,6 @@ def save_asset(obj, name):
     s = re.sub(r'-+', '-', s)
     return s.strip('-').lower()
 
-  # path = f'{report_path}/{name}'
   base_path, _ = os.path.splitext(report_path)
   path = f'{base_path}/{safe_name(name)}.png'
   os.makedirs(os.path.dirname(path), exist_ok=True)
