@@ -211,7 +211,7 @@ def chapter_mmean(df, mmean_):
   return mmean_
 
 def chapter_scale(df, scale_):
-  report("#Scale Scale[R | T, vol]")
+  report("# Scale[R | T, vol]")
 
   plots.plot_estimated_scale('Estimated Scale (at expiration)', df, scale_)
 
@@ -296,7 +296,7 @@ def chapter_premiums(df):
   # Normalised strikes as ITM probabilities
   plots.plot_premium_by_period(
     "Premium, Norm Strike P(R < K | vol)",
-    df, x='kq', x_title='p', p='np_exp', c='nc_exp', x_min=0, x_max=1, y_min=0, y_max=0.2
+    df, x='kq', x_title='p', p='p_exp', c='c_exp', x_min=0, x_max=1, y_min=0, y_max=0.2
   )
   plots.plot_premium_by_period(
     "Premium, Norm Strike as P(R < K | vol), log scale",

@@ -55,7 +55,7 @@ Found params: [-0.5207, 1.9198, 1.2038, -0.1444, 0.2549, 0.0000, 0.0000, -0.0349
 
 ![Mean E[R]](readme/mean-e-r.png)
 
-#Scale Scale[R | T, vol]
+### Scale[R | T, vol]
 
 ![Estimated Scale (at expiration)](readme/estimated-scale-at-expiration.png)
 
