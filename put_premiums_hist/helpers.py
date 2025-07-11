@@ -32,13 +32,15 @@ def report(msg, print_=True):
   def turn2space_indent_into4(text):
     return text.replace('\n  ', '\n    ')
 
+  # def replace_h1_with_h3(text):
+  #   lines = text.splitlines()
+  #   fixed = [
+  #     line.replace('\n# ', '\n### ', 1) if line.lstrip().startswith('# ') else line
+  #     for line in lines
+  #   ]
+  #   return '\n'.join(fixed)
   def replace_h1_with_h3(text):
-    lines = text.splitlines()
-    fixed = [
-      line.replace('\n# ', '\n### ', 1) if line.lstrip().startswith('# ') else line
-      for line in lines
-    ]
-    return '\n'.join(fixed)
+    return re.sub(r'(^|\n)# ', r'\1### ', text)
 
   def dedent(s):
     lines = s.strip('\n').splitlines()
