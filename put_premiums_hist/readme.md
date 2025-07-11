@@ -18,8 +18,6 @@ Estimating from historicaly realised
     mmean    = model(period, vol | P)
     P ~ min L2[weight (log mmean - log observed)]
 
-Tunning:
-
 Positive scale used, to avoid inflating mean by negative skew, although effect is minimal.
 
 Loss is weighted, to make errors equal across vols and periods.
@@ -43,28 +41,19 @@ Estimating from historicaly realised
     scale = model(period, vol | P)
     P ~ min L2[weight(scale - scale_t2)]
 
-Tunning:
+Loss is weighted, to make errors equal across vols and periods.
 
-- Loss is weighted, to make errors equal across vols and periods.
-- Longer periods have slightly lower weight, because they calculated with overlapping step 30d.
+Longer periods have slightly lower weight, because they calculated with overlapping step 30d.
 
     weight = 1/scale_t2/period^0.5
 
 Found params: [-0.5207, 1.9198, 1.2038, -0.1444, 0.2549, 0.0000, 0.0000, -0.0349, -0.0437], loss: 1.6550
 
-Mult Mean E[R], by period and vol (model - solid lines)
-
 ![Mult Mean E[R], by period and vol (model - solid lines)](readme/mult-mean-e-r-by-period-and-vol-model-solid-lines.png)
-
-Mult Mean E[R]
 
 ![Mult Mean E[R]](readme/mult-mean-e-r.png)
 
-Estimated Scale (at expiration)
-
 ![Estimated Scale (at expiration)](readme/estimated-scale-at-expiration.png)
-
-Vol by period, as EMA((log r)^2)^0.5
 
 ![Vol by period, as EMA((log r)^2)^0.5](readme/vol-by-period-as-ema-log-r-2-0-5.png)
 
@@ -82,53 +71,29 @@ Compared to true normalised strike
 Normalising strike using mean, scale is biased as doesn't account for the distribution shape (skew, tails). But
 should be consistent across periods and volatilities, as distribution should be similar.
 
-Normalised Strikes vs True Normalised Strikes
-
 ![Normalised Strikes vs True Normalised Strikes](readme/normalised-strikes-vs-true-normalised-strikes.png)
 
 # Premium
 
-Premium P, Raw Strike K
-
 ![Premium P, Raw Strike K](readme/premium-p-raw-strike-k.png)
-
-Premium P, Raw Strike K, log scale
 
 ![Premium P, Raw Strike K, log scale](readme/premium-p-raw-strike-k-log-scale.png)
 
-Premium P, Norm Strike (log K - lmean_T)/scale_T
-
 ![Premium P, Norm Strike (log K - lmean_T)/scale_T](readme/premium-p-norm-strike-log-k-lmean-t-scale-t.png)
-
-Premium P, Norm Strike (log K - lmean_T)/scale_T, log scale
 
 ![Premium P, Norm Strike (log K - lmean_T)/scale_T, log scale](readme/premium-p-norm-strike-log-k-lmean-t-scale-t-log-scale.png)
 
-Norm Premium P/mmean_T/scale_T, Norm Strike (log K - lmean_T)/scale_T
-
 ![Norm Premium P/mmean_T/scale_T, Norm Strike (log K - lmean_T)/scale_T](readme/norm-premium-p-mmean-t-scale-t-norm-strike-log-k-lmean-t-scale-t.png)
-
-Norm Premium P/mmean_T/scale_T, Norm Strike (log K - lmean_T)/scale_T, log scale
 
 ![Norm Premium P/mmean_T/scale_T, Norm Strike (log K - lmean_T)/scale_T, log scale](readme/norm-premium-p-mmean-t-scale-t-norm-strike-log-k-lmean-t-scale-t-log-scale.png)
 
-Premium, Norm Strike P(R < K | vol)
-
 ![Premium, Norm Strike P(R < K | vol)](readme/premium-norm-strike-p-r-k-vol.png)
-
-Premium, Norm Strike as P(R < K | vol), log scale
 
 ![Premium, Norm Strike as P(R < K | vol), log scale](readme/premium-norm-strike-as-p-r-k-vol-log-scale.png)
 
-Norm Premium P/E[R]/Scale[R], Norm Strike P(R < K | vol)
-
 ![Norm Premium P/E[R]/Scale[R], Norm Strike P(R < K | vol)](readme/norm-premium-p-e-r-scale-r-norm-strike-p-r-k-vol.png)
 
-Norm Premium P/E[R]/Scale[R], Norm Strik P(R < K | vol), log scale
-
 ![Norm Premium P/E[R]/Scale[R], Norm Strik P(R < K | vol), log scale](readme/norm-premium-p-e-r-scale-r-norm-strik-p-r-k-vol-log-scale.png)
-
-Ratio of Premium Min / Exp (calls solid)
 
 ![Ratio of Premium Min / Exp (calls solid)](readme/ratio-of-premium-min-exp-calls-solid.png)
 
@@ -136,11 +101,7 @@ Ratio of Premium Min / Exp (calls solid)
 
 # Skew
 
-scalen_t2 vs scalep_t2, x - sort(period,vol)
-
 ![scalen_t2 vs scalep_t2, x - sort(period,vol)](readme/scalen-t2-vs-scalep-t2-x-sort-period-vol.png)
-
-MMean E[R] with scale vs scalep, x - sort(period,vol)
 
 ![MMean E[R] with scale vs scalep, x - sort(period,vol)](readme/mmean-e-r-with-scale-vs-scalep-x-sort-period-vol.png)
 

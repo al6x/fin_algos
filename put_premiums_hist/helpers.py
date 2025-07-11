@@ -57,7 +57,7 @@ def report(msg, print_=True):
 
   if print_:
     indented_msg = "\n".join("  " + line for line in msg.splitlines())
-    print(indented_msg)
+    print(indented_msg + "\n")
 
   # os.makedirs(os.path.dirname(report_path), exist_ok=True)
   with open(report_path, "a") as f:
@@ -81,7 +81,8 @@ def save_asset(obj, name):
       f.write(obj)
   else:
     raise ValueError("Unsupported asset type: expected figure or string")
-  report(f'{name}\n\n![{name}]({path})')
+  # report(f'{name}\n\n![{name}]({path})')
+  report(f'![{name}]({path})')
 
 def cached(key, get):
   path = f"./tmp/cache/{key}-{datetime.now():%Y-%m-%d}.pkl"

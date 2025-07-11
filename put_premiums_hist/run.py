@@ -74,8 +74,6 @@ def estimate_mmean(df):
       mmean    = model(period, vol | P)
       P ~ min L2[weight (log mmean - log observed)]
 
-    Tunning:
-
     Positive scale used, to avoid inflating mean by negative skew, although effect is minimal.
 
     Loss is weighted, to make errors equal across vols and periods.
@@ -145,10 +143,9 @@ def estimate_scale(df):
       scale = model(period, vol | P)
       P ~ min L2[weight(scale - scale_t2)]
 
-    Tunning:
+    Loss is weighted, to make errors equal across vols and periods.
 
-    - Loss is weighted, to make errors equal across vols and periods.
-    - Longer periods have slightly lower weight, because they calculated with overlapping step 30d.
+    Longer periods have slightly lower weight, because they calculated with overlapping step 30d.
 
       weight = 1/scale_t2/period^0.5
   """)
