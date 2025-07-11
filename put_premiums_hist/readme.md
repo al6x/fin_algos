@@ -10,7 +10,7 @@ Premiums calculated for each period and vol quantile:
 Each return has its own risk free rate, so separate discount applied to each point, instead of appluing single discount
 to aggregated premium.
 
-# Mult Mean E[R]
+# Estimating Mean E[R]
 
 Estimating from historicaly realised
 
@@ -34,7 +34,7 @@ Longer periods have slightly lower weight, because they calculated with overlapp
 
 Found params: [-0.0011, 0.0075, 0.0427, 3.2455, 0.0037, -0.0043], loss: 1.1690
 
-# Scale at expiration
+# Estimating Scale[R]
 
 Estimating from historicaly realised
 
@@ -49,9 +49,13 @@ Longer periods have slightly lower weight, because they calculated with overlapp
 
 Found params: [-0.5207, 1.9198, 1.2038, -0.1444, 0.2549, 0.0000, 0.0000, -0.0349, -0.0437], loss: 1.6550
 
-![Mult Mean E[R], by period and vol (model - solid lines)](readme/mult-mean-e-r-by-period-and-vol-model-solid-lines.png)
+# Mean E[R | T, vol]
 
-![Mult Mean E[R]](readme/mult-mean-e-r.png)
+![Mean E[R], by period and vol (model - solid lines)](readme/mean-e-r-by-period-and-vol-model-solid-lines.png)
+
+![Mean E[R]](readme/mean-e-r.png)
+
+#Scale Scale[R | T, vol]
 
 ![Estimated Scale (at expiration)](readme/estimated-scale-at-expiration.png)
 
@@ -98,6 +102,8 @@ should be consistent across periods and volatilities, as distribution should be 
 ![Ratio of Premium Min / Exp (calls solid)](readme/ratio-of-premium-min-exp-calls-solid.png)
 
 #note bounds for american call: eu < am < 2eu
+
+# Skew
 
 # Skew
 

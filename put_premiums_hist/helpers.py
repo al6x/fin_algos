@@ -41,7 +41,7 @@ def report(msg, print_=True):
     return '\n'.join(fixed)
 
   def dedent(s):
-    lines = s.lstrip('\n').splitlines()
+    lines = s.strip('\n').splitlines()
     non_empty = [line for line in lines if line.strip()]
     if not non_empty:
       return ''

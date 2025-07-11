@@ -66,7 +66,7 @@ def load():
 
 def estimate_mmean(df):
   report("""
-    # Mult Mean E[R]
+    # Estimating Mean E[R]
 
     Estimating from historicaly realised
 
@@ -136,7 +136,7 @@ def estimate_mmean(df):
 
 def estimate_scale(df):
   report("""
-    # Scale at expiration
+    # Estimating Scale[R]
 
     Estimating from historicaly realised
 
@@ -196,24 +196,30 @@ def estimate_scale(df):
   return lambda period, vol: scale_(period, vol, P)
 
 def chapter_mmean(df, mmean_):
+  report("# Mean E[R | T, vol]")
+
   plots.plot_lmean(
-    "Mult Mean E[R], by period and vol (model - solid lines)",
+    "Mean E[R], by period and vol (model - solid lines)",
     df, mmean_
   )
 
   plots.plot_lmean_heatmap(
-    "Mult Mean E[R]",
+    "Mean E[R]",
     mmean_=mmean_, df=df,
     vol_range=(df['vol'].min(), df['vol'].max()), period_range=(df['period'].min(), df['period'].max()),
   )
   return mmean_
 
 def chapter_scale(df, scale_):
+  report("#Scale Scale[R | T, vol]")
+
   plots.plot_estimated_scale('Estimated Scale (at expiration)', df, scale_)
 
   plots.plot_vols_by_periods('Vol by period, as EMA((log r)^2)^0.5', df)
 
 def chapter_skew(df):
+  report("# Skew")
+
   df = df[['period', 'lmean_t2', 'scale_t2', 'scalep_t2', 'scalen_t2', 'vol_dc']].drop_duplicates() \
     .sort_values(['period', 'vol_dc'])
   mmean = np.exp(df['lmean_t2'] + 0.5*df['scale_t2']**2)
@@ -252,6 +258,7 @@ def chapter_normalised_strikes(df, scale_, mmean_):
 
 def chapter_premiums(df):
   report("# Premium")
+
   df = df.copy()
   mmeans = np.exp(df['lmean_t2'] + 0.5*df['scalep_t2']**2)
   scales = df['scale_t2']
