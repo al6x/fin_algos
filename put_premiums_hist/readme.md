@@ -10,7 +10,7 @@ Premiums calculated for each period and vol quantile:
 Each return has its own risk free rate, so separate discount applied to each point, instead of appluing single discount
 to aggregated premium.
 
-# Estimating Mean E[R]
+### Estimating Mean E[R]
 
 Estimating from historicaly realised
 
@@ -34,7 +34,7 @@ Longer periods have slightly lower weight, because they calculated with overlapp
 
 Found params: [-0.0011, 0.0075, 0.0427, 3.2455, 0.0037, -0.0043], loss: 1.1690
 
-# Estimating Scale[R]
+### Estimating Scale[R]
 
 Estimating from historicaly realised
 
@@ -49,7 +49,7 @@ Longer periods have slightly lower weight, because they calculated with overlapp
 
 Found params: [-0.5207, 1.9198, 1.2038, -0.1444, 0.2549, 0.0000, 0.0000, -0.0349, -0.0437], loss: 1.6550
 
-# Mean E[R | T, vol]
+### Mean E[R | T, vol]
 
 ![Mean E[R], by period and vol (model - solid lines)](readme/mean-e-r-by-period-and-vol-model-solid-lines.png)
 
@@ -61,7 +61,7 @@ Found params: [-0.5207, 1.9198, 1.2038, -0.1444, 0.2549, 0.0000, 0.0000, -0.0349
 
 ![Vol by period, as EMA((log r)^2)^0.5](readme/vol-by-period-as-ema-log-r-2-0-5.png)
 
-# Strike normalisation
+### Strike normalisation
 
     mmean = predict_mmean(period, vol | P)
     scale = predict_scale(period, vol | P)
@@ -77,7 +77,7 @@ should be consistent across periods and volatilities, as distribution should be 
 
 ![Normalised Strikes vs True Normalised Strikes](readme/normalised-strikes-vs-true-normalised-strikes.png)
 
-# Premium
+### Premium
 
 ![Premium P, Raw Strike K](readme/premium-p-raw-strike-k.png)
 
@@ -103,15 +103,13 @@ should be consistent across periods and volatilities, as distribution should be 
 
 #note bounds for american call: eu < am < 2eu
 
-# Skew
-
-# Skew
+### Skew
 
 ![scalen_t2 vs scalep_t2, x - sort(period,vol)](readme/scalen-t2-vs-scalep-t2-x-sort-period-vol.png)
 
 ![MMean E[R] with scale vs scalep, x - sort(period,vol)](readme/mmean-e-r-with-scale-vs-scalep-x-sort-period-vol.png)
 
-# Data
+### Data
 
     - period - period, days
 

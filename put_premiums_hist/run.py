@@ -225,7 +225,6 @@ def chapter_skew(df):
   mmean = np.exp(df['lmean_t2'] + 0.5*df['scale_t2']**2)
   mmeanp = np.exp(df['lmean_t2'] + 0.5*df['scalep_t2']**2)
 
-  report("# Skew")
   plots.plot_mmean_ratio("scalen_t2 vs scalep_t2, x - sort(period,vol)", df['scale_t2']/df['scalep_t2'])
   plots.plot_mmean_ratio("MMean E[R] with scale vs scalep, x - sort(period,vol)", mmean/mmeanp)
 
