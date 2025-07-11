@@ -8,22 +8,6 @@ from datetime import datetime
 import matplotlib.cm as cm
 import re
 
-def parse_inits_bounds(init_params):
-  inits, bounds = [], []
-  for p in init_params:
-    if isinstance(p, tuple):
-      init, lower, upper = p
-      inits.append(init); bounds.append((lower, upper))
-    else:
-      inits.append(p); bounds.append((None, None))
-  return inits, bounds
-
-def sigmoid(x):
-  return 1.0 / (1.0 + np.exp(-x))
-
-def logit(y):
-  return np.log(y / (1.0 - y))
-
 report_path = f'readme.md'
 report_first_call = True
 def report(msg, print_=True):
@@ -32,13 +16,6 @@ def report(msg, print_=True):
   def turn2space_indent_into4(text):
     return text.replace('\n  ', '\n    ')
 
-  # def replace_h1_with_h3(text):
-  #   lines = text.splitlines()
-  #   fixed = [
-  #     line.replace('\n# ', '\n### ', 1) if line.lstrip().startswith('# ') else line
-  #     for line in lines
-  #   ]
-  #   return '\n'.join(fixed)
   def replace_h1_with_h3(text):
     return re.sub(r'(^|\n)# ', r'\1### ', text)
 

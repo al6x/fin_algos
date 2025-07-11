@@ -3,6 +3,22 @@ from itertools import combinations
 import numpy as np
 from scipy.stats import norm
 
+def parse_inits_bounds(init_params):
+  inits, bounds = [], []
+  for p in init_params:
+    if isinstance(p, tuple):
+      init, lower, upper = p
+      inits.append(init); bounds.append((lower, upper))
+    else:
+      inits.append(p); bounds.append((None, None))
+  return inits, bounds
+
+def sigmoid(x):
+  return 1.0 / (1.0 + np.exp(-x))
+
+def logit(y):
+  return np.log(y / (1.0 - y))
+
 def prune_params(loss, init, fit, min_params):
   """
   Exhaustive best-subset selection.
