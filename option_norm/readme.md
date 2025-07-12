@@ -40,7 +40,7 @@ Found params: [-0.0011, 0.0075, 0.0427, 3.2455, 0.0037, -0.0043], loss: 1.1690
 
 ![Mean E[R]](readme/mean-e-r.png)
 
-### Estimating Scale[R]
+### Estimating Scale[log R]
 
 Estimating from historicaly realised
 
@@ -55,7 +55,7 @@ Longer periods have slightly lower weight, because they calculated with overlapp
 
 Found params: [-0.5207, 1.9198, 1.2038, -0.1444, 0.2549, 0.0000, 0.0000, -0.0349, -0.0437], loss: 1.6550
 
-### Scale[R | T, vol]
+### Scale[log R | T, vol]
 
 ![Estimated Scale (at expiration)](readme/estimated-scale-at-expiration.png)
 
@@ -89,17 +89,13 @@ should be consistent across periods and volatilities, as distribution should be 
 
 ![Premium, Norm Strike P(R < K | vol)](readme/premium-norm-strike-p-r-k-vol.png)
 
-![Premium, Norm Strike as P(R < K | vol), log scale](readme/premium-norm-strike-as-p-r-k-vol-log-scale.png)
-
 ### Norm Premium
 
 ![Norm Premium P/mmean_T/scale_T, Norm Strike (log K - lmean_T)/scale_T](readme/norm-premium-p-mmean-t-scale-t-norm-strike-log-k-lmean-t-scale-t.png)
 
 ![Norm Premium P/mmean_T/scale_T, Norm Strike (log K - lmean_T)/scale_T, log scale](readme/norm-premium-p-mmean-t-scale-t-norm-strike-log-k-lmean-t-scale-t-log-scale.png)
 
-![Norm Premium P/E[R]/Scale[R], Norm Strike P(R < K | vol)](readme/norm-premium-p-e-r-scale-r-norm-strike-p-r-k-vol.png)
-
-![Norm Premium P/E[R]/Scale[R], Norm Strik P(R < K | vol), log scale](readme/norm-premium-p-e-r-scale-r-norm-strik-p-r-k-vol-log-scale.png)
+![Norm Premium P/E[R]/Scale[log R], Norm Strike P(R < K | vol)](readme/norm-premium-p-e-r-scale-log-r-norm-strike-p-r-k-vol.png)
 
 ![Ratio of Premium Min / Exp (calls solid)](readme/ratio-of-premium-min-exp-calls-solid.png)
 

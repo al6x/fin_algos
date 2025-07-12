@@ -136,7 +136,7 @@ def estimate_mmean(df):
 
 def estimate_scale(df):
   report("""
-    # Estimating Scale[R]
+    # Estimating Scale[log R]
 
     Estimating from historicaly realised
 
@@ -211,7 +211,7 @@ def chapter_mmean(df, mmean_):
   return mmean_
 
 def chapter_scale(df, scale_):
-  report("# Scale[R | T, vol]")
+  report("# Scale[log R | T, vol]")
 
   plots.plot_estimated_scale('Estimated Scale (at expiration)', df, scale_)
 
@@ -289,10 +289,10 @@ def chapter_premiums(df):
     "Premium, Norm Strike P(R < K | vol)",
     df, x='kq', x_title='p', p='p_exp', c='c_exp', x_min=0, x_max=1, y_min=0, y_max=0.2
   )
-  plots.plot_premium_by_period(
-    "Premium, Norm Strike as P(R < K | vol), log scale",
-    df, x='kq', x_title='p', p='p_exp', c='c_exp', x_min=0, x_max=1, y_min=0.001, y_max=0.2, yscale='log'
-  )
+  # plots.plot_premium_by_period(
+  #   "Premium, Norm Strike as P(R < K | vol), log scale",
+  #   df, x='kq', x_title='p', p='p_exp', c='c_exp', x_min=0, x_max=1, y_min=0.001, y_max=0.2, yscale='log'
+  # )
 
   report("# Norm Premium")
 
@@ -306,13 +306,13 @@ def chapter_premiums(df):
   )
 
   plots.plot_premium_by_period(
-    "Norm Premium P/E[R]/Scale[R], Norm Strike P(R < K | vol)",
+    "Norm Premium P/E[R]/Scale[log R], Norm Strike P(R < K | vol)",
     df, x='kq', x_title='p', p='np_exp', c='nc_exp', x_min=0, x_max=1, y_min=0, y_max=1
   )
-  plots.plot_premium_by_period(
-    "Norm Premium P/E[R]/Scale[R], Norm Strik P(R < K | vol), log scale",
-    df, x='kq', x_title='p', p='np_exp', c='nc_exp', x_min=0, x_max=1, y_min=0.005, y_max=1, yscale='log'
-  )
+  # plots.plot_premium_by_period(
+  #   "Norm Premium P/E[R]/Scale[log R], Norm Strik P(R < K | vol), log scale",
+  #   df, x='kq', x_title='p', p='np_exp', c='nc_exp', x_min=0, x_max=1, y_min=0.005, y_max=1, yscale='log'
+  # )
 
   plots.plot_ratio_by_period("Ratio of Premium Min / Exp (calls solid)", df)
   report("#note bounds for american call: eu < am < 2eu")
@@ -331,6 +331,7 @@ def run():
 
   chapter_normalised_strikes(df, scale_, mmean_)
   chapter_premiums(df)
+
   chapter_skew(df)
 
   report(doc_after, False)
