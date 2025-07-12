@@ -233,7 +233,7 @@ def chapter_normalised_strikes(df, scale_, mmean_):
 
       E_pred[R]         = predict_mmean(period, vol | P)
       Scale_pred[log R] = predict_scale(period, vol | P)
-      E_pred[log R] = log E[R]_pred - 0.5*Scale_pred[log R]^2
+      E_pred[log R]     = log E[R]_pred - 0.5*Scale_pred[log R]^2
       m = (log(K) - E_pred[log R])/Scale_pred[log R]
 
     Compared to true normalised strike
@@ -279,7 +279,7 @@ def chapter_premiums(df):
   )
 
   # Normalised strikes as z score
-  report("Norm Strike (log K - E[log R])/Scale[log R] (z score in log space or d2 from BlackScholes)")
+  report("Norm Strike `(log K - E[log R])/Scale[log R]` (z score in log space or d2 from BlackScholes)")
 
   plots.plot_premium_by_period(
     "Premium P, Norm Strike (log K - E[log R])/Scale[log R]",
@@ -291,7 +291,7 @@ def chapter_premiums(df):
   )
 
   # Normalised strikes as ITM probabilities
-  report("Norm Strike P(R < K | vol) (probability of ITM or F(d2) from BlackScholes)")
+  report("Norm Strike `P(R < K | vol)` (probability of ITM or F(d2) from BlackScholes)")
 
   plots.plot_premium_by_period(
     "Premium, Norm Strike P(R < K | vol)",
@@ -304,7 +304,7 @@ def chapter_premiums(df):
 
   report("# Norm Premium")
 
-  report("Normalising premium as P/E[R]/Scale[log R]")
+  report("Normalising premium as `P/E[R]/Scale[log R]`")
 
   plots.plot_premium_by_period(
     "Norm Premium P/E[R]/Scale[log R], Norm Strike (log K - E[log R])/Scale[log R]",
@@ -323,6 +323,8 @@ def chapter_premiums(df):
   #   "Norm Premium P/E[R]/Scale[log R], Norm Strik P(R < K | vol), log scale",
   #   df, x='kq', x_title='p', p='np_exp', c='nc_exp', x_min=0, x_max=1, y_min=0.005, y_max=1, yscale='log'
   # )
+
+  report("# Ratio of Premium at expiration to max possible over option lifetime")
 
   plots.plot_ratio_by_period("Ratio of Premium Min / Exp (calls solid)", df)
   report("#note bounds for american call: eu < am < 2eu")

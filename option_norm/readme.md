@@ -64,7 +64,7 @@ Found params: [-0.5207, 1.9198, 1.2038, -0.1444, 0.2549, 0.0000, 0.0000, -0.0349
 
     E_pred[R]         = predict_mmean(period, vol | P)
     Scale_pred[log R] = predict_scale(period, vol | P)
-    E_pred[log R] = log E[R]_pred - 0.5*Scale_pred[log R]^2
+    E_pred[log R]     = log E[R]_pred - 0.5*Scale_pred[log R]^2
     m = (log(K) - E_pred[log R])/Scale_pred[log R]
 
 Compared to true normalised strike
@@ -87,25 +87,27 @@ Raw Strike K
 
 ![Premium P, Raw Strike K, log scale](readme/premium-p-raw-strike-k-log-scale.png)
 
-Norm Strike (log K - E[log R])/Scale[log R] (z score in log space or d2 from BlackScholes)
+Norm Strike `(log K - E[log R])/Scale[log R]` (z score in log space or d2 from BlackScholes)
 
 ![Premium P, Norm Strike (log K - E[log R])/Scale[log R]](readme/premium-p-norm-strike-log-k-e-log-r-scale-log-r.png)
 
 ![Premium P, Norm Strike (log K - E[log R])/Scale[log R], log scale](readme/premium-p-norm-strike-log-k-e-log-r-scale-log-r-log-scale.png)
 
-Norm Strike P(R < K | vol) (probability of ITM or F(d2) from BlackScholes)
+Norm Strike `P(R < K | vol)` (probability of ITM or F(d2) from BlackScholes)
 
 ![Premium, Norm Strike P(R < K | vol)](readme/premium-norm-strike-p-r-k-vol.png)
 
 ### Norm Premium
 
-Normalising premium as P/E[R]/Scale[log R]
+Normalising premium as `P/E[R]/Scale[log R]`
 
 ![Norm Premium P/E[R]/Scale[log R], Norm Strike (log K - E[log R])/Scale[log R]](readme/norm-premium-p-e-r-scale-log-r-norm-strike-log-k-e-log-r-scale-log-r.png)
 
 ![Norm Premium P/E[R]/Scale[log R], Norm Strike (log K - E[log R])/Scale[log R], log scale](readme/norm-premium-p-e-r-scale-log-r-norm-strike-log-k-e-log-r-scale-log-r-log-scale.png)
 
 ![Norm Premium P/E[R]/Scale[log R], Norm Strike P(R < K | vol)](readme/norm-premium-p-e-r-scale-log-r-norm-strike-p-r-k-vol.png)
+
+### Ratio of Premium at expiration to max possible over option lifetime
 
 ![Ratio of Premium Min / Exp (calls solid)](readme/ratio-of-premium-min-exp-calls-solid.png)
 
