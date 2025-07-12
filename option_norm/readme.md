@@ -87,15 +87,15 @@ Raw Strike K
 
 ![Premium P, Raw Strike K, log scale](readme/premium-p-raw-strike-k-log-scale.png)
 
+Norm Strike `P(R < K | vol)` (probability of ITM or F(d2) from BlackScholes)
+
+![Premium, Norm Strike P(R < K | vol)](readme/premium-norm-strike-p-r-k-vol.png)
+
 Norm Strike `(log K - E[log R])/Scale[log R]` (z score in log space or d2 from BlackScholes)
 
 ![Premium P, Norm Strike (log K - E[log R])/Scale[log R]](readme/premium-p-norm-strike-log-k-e-log-r-scale-log-r.png)
 
 ![Premium P, Norm Strike (log K - E[log R])/Scale[log R], log scale](readme/premium-p-norm-strike-log-k-e-log-r-scale-log-r-log-scale.png)
-
-Norm Strike `P(R < K | vol)` (probability of ITM or F(d2) from BlackScholes)
-
-![Premium, Norm Strike P(R < K | vol)](readme/premium-norm-strike-p-r-k-vol.png)
 
 ### Norm Premium
 

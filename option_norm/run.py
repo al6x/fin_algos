@@ -278,18 +278,6 @@ def chapter_premiums(df):
     df, x='k', x_title='k', p='p_exp', c='c_exp', x_min=0.5, x_max=2, y_min=0.001, y_max=0.5, yscale='log', xscale='log'
   )
 
-  # Normalised strikes as z score
-  report("Norm Strike `(log K - E[log R])/Scale[log R]` (z score in log space or d2 from BlackScholes)")
-
-  plots.plot_premium_by_period(
-    "Premium P, Norm Strike (log K - E[log R])/Scale[log R]",
-    df, x='m_true', x_title='Norm Strike', p='p_exp', c='c_exp', x_min=-4, x_max=4, y_min=0, y_max=0.2, yscale='linear'
-  )
-  plots.plot_premium_by_period(
-    "Premium P, Norm Strike (log K - E[log R])/Scale[log R], log scale",
-    df, x='m_true', x_title='Norm Strike', p='p_exp', c='c_exp', x_min=-4, x_max=4, y_min=0.001, y_max=0.2, yscale='log'
-  )
-
   # Normalised strikes as ITM probabilities
   report("Norm Strike `P(R < K | vol)` (probability of ITM or F(d2) from BlackScholes)")
 
@@ -301,6 +289,18 @@ def chapter_premiums(df):
   #   "Premium, Norm Strike as P(R < K | vol), log scale",
   #   df, x='kq', x_title='p', p='p_exp', c='c_exp', x_min=0, x_max=1, y_min=0.001, y_max=0.2, yscale='log'
   # )
+
+  # Normalised strikes as z score
+  report("Norm Strike `(log K - E[log R])/Scale[log R]` (z score in log space or d2 from BlackScholes)")
+
+  plots.plot_premium_by_period(
+    "Premium P, Norm Strike (log K - E[log R])/Scale[log R]",
+    df, x='m_true', x_title='Norm Strike', p='p_exp', c='c_exp', x_min=-4, x_max=4, y_min=0, y_max=0.2, yscale='linear'
+  )
+  plots.plot_premium_by_period(
+    "Premium P, Norm Strike (log K - E[log R])/Scale[log R], log scale",
+    df, x='m_true', x_title='Norm Strike', p='p_exp', c='c_exp', x_min=-4, x_max=4, y_min=0.001, y_max=0.2, yscale='log'
+  )
 
   report("# Norm Premium")
 
