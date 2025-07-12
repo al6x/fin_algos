@@ -1,4 +1,4 @@
-Experiments and explorations:
+Profit hunting experiments and explorations:
 
 - Financial risk and uncertainty.
 - Portfolio protection with put options.
