@@ -5,6 +5,6 @@ Experiments and explorations:
 - Bounded-loss option strategies.
 - Financial statement analysis (Greenblatt).
 
-### Option Normalisation
+### [Option Normalisation](option_norm)
 
 ![Norm Premium P/E[R]/Scale[log R], Norm Strike P(R < K | vol)](option_norm/readme/norm-premium-p-e-r-scale-log-r-norm-strike-p-r-k-vol.png)
