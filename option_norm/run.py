@@ -128,8 +128,8 @@ def estimate_mmean(df):
   # inits = []
   # P = tuple(fit_multi_init(loss, inits, fit))
 
-  # P = tuple(fit(loss, init).x)
-  P = cached('lmmean', lambda: tuple(fit(loss, init).x))
+  P = tuple(fit(loss, init).x)
+  # P = cached('lmmean', lambda: tuple(fit(loss, init).x))
   report(f"Found params: [{', '.join(f'{x:.4f}' for x in P)}], loss: {loss(P):.4f}")
 
   return lambda period, vol: np.exp(lmmean_(period, vol, P))
@@ -188,8 +188,8 @@ def estimate_scale(df):
   # Best 8-param model loss=1.4260, kept=(0, 1, 2, 3, 4, 5, 7, 8)
   # Best 9-param model loss=1.4209, kept=(0, 1, 2, 3, 4, 5, 6, 7, 8)
 
-  # P = tuple(fit(loss, init).x)
-  P = cached('scale', lambda: tuple(fit(loss, init).x))
+  P = tuple(fit(loss, init).x)
+  # P = cached('scale', lambda: tuple(fit(loss, init).x))
   report(f"Found params: [{', '.join(f'{x:.4f}' for x in P)}], loss: {loss(P):.4f}")
 
   return lambda period, vol: scale_(period, vol, P)
@@ -197,17 +197,31 @@ def estimate_scale(df):
 def chapter_mmean(df, mmean_):
   report("# Mean E[R | T, vol]")
 
-  plots.plot_lmean(
-    "Mean E[R], by period and vol (model - solid lines)",
-    df, mmean_
-  )
+  def mean_fitting_info():
+    sub = df.drop_duplicates(subset=['period','vol_dc']).copy()
+
+    sub['mmean_true'] = np.exp(sub.lmean_t2 + 0.5*df.scale_t2**2)
+    sub['mmean_model'] = sub.apply(lambda r: mmean_(r.period, r.vol), axis=1)
+
+    plots.plot_lmean(
+      "Mean E[R], by period and vol (model - solid lines)",
+      sub, True
+    )
+
+    def save_mmean_rel_error():
+      sub['mmean_rel_error'] = round(sub.mmean_model / sub.mmean_true, 4)
+      sub[['period', 'vol_dc', 'mmean_rel_error']] \
+        .sort_values(['period', 'vol_dc']) \
+        .to_csv('data/out/mmean_rel_error.csv', index=False)
+    # save_mmean_rel_error()
+
+  mean_fitting_info()
 
   plots.plot_lmean_heatmap(
     "Mean E[R]",
     mmean_=mmean_, df=df,
     vol_range=(df['vol'].min(), df['vol'].max()), period_range=(df['period'].min(), df['period'].max()),
   )
-  return mmean_
 
 def chapter_scale(df, scale_):
   report("# Scale[log R | T, vol]")
@@ -347,6 +361,12 @@ def run():
   chapter_skew(df)
 
   report(doc_after, False)
+
+def tmp():
+  df = load()
+
+  mmean_ = estimate_mmean(df)
+  chapter_mmean(df, mmean_)
 
 if __name__ == "__main__":
   run()

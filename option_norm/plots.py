@@ -14,16 +14,10 @@ from matplotlib.lines import Line2D
 
 show=False
 
-def plot_lmean(title, df, model=None):
-  df = df.drop_duplicates(subset=['period','vol_dc']).copy()
-
+def plot_lmean(title, df, model=False):
   vols   = sorted(df.vol_dc.unique())
   cmap   = plt.get_cmap('coolwarm')
   colors = cmap(np.linspace(0, 1, len(vols)))
-
-  df['mmean_true'] = np.exp(df.lmean_t2 + 0.5*df.scale_t2**2)
-  if model is not None:
-    df['mmean_model'] = df.apply(lambda r: model(r.period, r.vol), axis=1)
 
   def _plot_raw(df, ax):
     ax.set_xlabel('Period (days)')
@@ -35,7 +29,7 @@ def plot_lmean(title, df, model=None):
       x, y = sub.period, sub.mmean_true
       ax.scatter(x, y, color=colors[i], s=20, alpha=0.7, edgecolor='k', lw=0.2, label=f'{v}')
       ax.plot(x, y, linestyle='--', color=colors[i], alpha=0.5)
-      if model is not None:
+      if model:
         ax.plot(x, sub.mmean_model, color=colors[i], lw=1.5)
     ax.grid(True, which='both', ls=':')
     ax.legend(title='vol decile', fontsize='small', loc='upper right')
@@ -50,7 +44,7 @@ def plot_lmean(title, df, model=None):
       return np.log(mmean)/period
 
     df['mmean_true_norm'] = trans_mmean(df.mmean_true, df.period, df.vol)
-    if model is not None:
+    if model:
       df['mmean_model_norm'] = df.apply(lambda r: trans_mmean(r.mmean_model, r.period, r.vol), axis=1)
 
     ax.set_xlabel('Period (days)')
@@ -62,7 +56,7 @@ def plot_lmean(title, df, model=None):
       x, y = sub.period, sub.mmean_true_norm
       ax.scatter(x, y, color=colors[i], s=20, alpha=0.7, edgecolor='k', lw=0.2, label=f'{v}')
       ax.plot(x, y, linestyle='--', color=colors[i], alpha=0.5)
-      if model is not None:
+      if model:
         ax.plot(x, sub.mmean_model_norm, color=colors[i], lw=1.5)
     ax.grid(True, which='both', ls=':')
     ax.legend(title='vol decile', fontsize='small', loc='upper right')
@@ -88,7 +82,7 @@ def plot_lmean(title, df, model=None):
   fig, axes = plt.subplots(2, 2, figsize=(12, 8)) # 2 rows, 2 cols
   _plot_raw(df, axes[0, 0])
   axes[0, 1].axis('off')
-  if model is not None:
+  if model:
     _plot_errors(df, axes[1, 1])
   _plot_trans(df, axes[1, 0])  # row=2, col=1
   fig.suptitle(title)
