@@ -17,12 +17,12 @@ show=True
 doc_before = r"""
 Option Normalisation using Historical Data
 
-  R = S_T/S_0, K = K/S_0
-
 Premiums calculated for each period and vol quantile:
 
   C_{eu}(K|Q_{vol}) = E[e^-rT (R-K)+|Q_{vol}]
   P_{eu}(K|Q_{vol}) = E[e^-rT (K-R)+|Q_{vol}]
+
+  where R = S_T/S_0, K = K/S_0
 
 Each return has its own risk free rate, so separate discount applied to each point, instead of appluing single discount
 to aggregated premium.
@@ -36,8 +36,8 @@ doc_after = """
     - vol_dc - volatility decile 1..10
     - vol    - current moving daily volatility, as EWA(log(r)^2)^0.5, (scale unit, not variance), median of vol_dc group.
 
-    - lmean_t2  - mean[log R]
-    - scale_t2  - mean_abs_dev(log R - lmean_t2) * sqrt(pi/2)
+    - lmean_t2  - E[log R]
+    - scale_t2  - Scale[log R] = mean_abs_dev(log R - lmean_t2) * sqrt(pi/2)
 
     - k  - strike
     - kq - strike quantile
@@ -70,9 +70,9 @@ def estimate_mmean(df):
 
     Estimating from historicaly realised
 
-      observed = exp(mmean_t2 + 0.5*scalep_t2^2)
-      mmean    = model(period, vol | P)
-      P ~ min L2[weight (log mmean - log observed)]
+      E_hist[R] = exp(E[log R] + 0.5*Scale[log R]^2)
+      E_pred[R]  = model(period, vol | P)
+      P ~ min L2[weight (log E_pred[R] - log E_hist[R])]
 
     Positive scale used, to avoid inflating mean by negative skew, although effect is minimal.
 
@@ -83,7 +83,7 @@ def estimate_mmean(df):
 
     Vol decile 10 ignored, it's too noisy. As result model understimates mean for 10 vol decile, it's desired.
 
-    Longer periods have slightly lower weight, because they calculated with overlapping step 30d.
+    Longer periods calculated with overlapping step 30d, and less reliably, so lowering weight a bit.
 
       weight = 1/period^2/vol^0.5
       weight[vol_dc in (1, 9)] *= 1.5
@@ -140,14 +140,13 @@ def estimate_scale(df):
 
     Estimating from historicaly realised
 
-      scale = model(period, vol | P)
-      P ~ min L2[weight(scale - scale_t2)]
+      Scale_pred[log R] = model(period, vol | P)
+      P ~ min L2[weight(Scale_pred[log R] - Scale_hist[log R])]
 
-    Loss is weighted, to make errors equal across vols and periods.
+    Loss is weighted, to make errors equal across vols and periods. Longer periods calculated with overlapping step 30d,
+    and less reliably, so lowering weight a bit.
 
-    Longer periods have slightly lower weight, because they calculated with overlapping step 30d.
-
-      weight = 1/scale_t2/period^0.5
+      weight = 1/Scale_hist[log R]/period^0.5
   """)
 
   # We only need an unique subset of the data, it's the same across different strikes
@@ -232,17 +231,20 @@ def chapter_normalised_strikes(df, scale_, mmean_):
   report("""
     # Strike normalisation
 
-      mmean = predict_mmean(period, vol | P)
-      scale = predict_scale(period, vol | P)
-      loc = log mmean - 0.5*scale^2
-      m = (log(K) - loc)/scale
+      E_pred[R]         = predict_mmean(period, vol | P)
+      Scale_pred[log R] = predict_scale(period, vol | P)
+      E_pred[log R] = log E[R]_pred - 0.5*Scale_pred[log R]^2
+      m = (log(K) - E_pred[log R])/Scale_pred[log R]
 
     Compared to true normalised strike
 
-      m_true = (log(K) - mean_t2) / scale_t2
+      m_true = (log(K) - E_hist[log R])/Scale_hist[log R]
 
     Normalising strike using mean, scale is biased as doesn't account for the distribution shape (skew, tails). But
     should be consistent across periods and volatilities, as distribution should be similar.
+
+    Thre's minor mistake `E[log R] = log E[R] - 0.5*Scale[log R]^2` should use positive part of scale, but error is
+    very small, ignoring.
   """)
   scales = scale_(df['period'], df['vol'])
   mmeans = mmean_(df['period'], df['vol'])
@@ -265,6 +267,8 @@ def chapter_premiums(df):
   df['np_exp'] = df['p_exp']/mmeans/scales
   df['nc_exp'] = df['c_exp']/mmeans/scales
 
+  report("Raw Strike K")
+
   plots.plot_premium_by_period(
     "Premium P, Raw Strike K",
     df, x='k', x_title='k', p='p_exp', c='c_exp', x_min=0.5, x_max=2, y_min=0, y_max=0.2, yscale='linear', xscale='log'
@@ -275,16 +279,20 @@ def chapter_premiums(df):
   )
 
   # Normalised strikes as z score
+  report("Norm Strike (log K - E[log R])/Scale[log R] (z score in log space or d2 from BlackScholes)")
+
   plots.plot_premium_by_period(
-    "Premium P, Norm Strike (log K - lmean_T)/scale_T",
+    "Premium P, Norm Strike (log K - E[log R])/Scale[log R]",
     df, x='m_true', x_title='Norm Strike', p='p_exp', c='c_exp', x_min=-4, x_max=4, y_min=0, y_max=0.2, yscale='linear'
   )
   plots.plot_premium_by_period(
-    "Premium P, Norm Strike (log K - lmean_T)/scale_T, log scale",
+    "Premium P, Norm Strike (log K - E[log R])/Scale[log R], log scale",
     df, x='m_true', x_title='Norm Strike', p='p_exp', c='c_exp', x_min=-4, x_max=4, y_min=0.001, y_max=0.2, yscale='log'
   )
 
   # Normalised strikes as ITM probabilities
+  report("Norm Strike P(R < K | vol) (probability of ITM or F(d2) from BlackScholes)")
+
   plots.plot_premium_by_period(
     "Premium, Norm Strike P(R < K | vol)",
     df, x='kq', x_title='p', p='p_exp', c='c_exp', x_min=0, x_max=1, y_min=0, y_max=0.2
@@ -296,12 +304,14 @@ def chapter_premiums(df):
 
   report("# Norm Premium")
 
+  report("Normalising premium as P/E[R]/Scale[log R]")
+
   plots.plot_premium_by_period(
-    "Norm Premium P/mmean_T/scale_T, Norm Strike (log K - lmean_T)/scale_T",
+    "Norm Premium P/E[R]/Scale[log R], Norm Strike (log K - E[log R])/Scale[log R]",
     df, x='m_true', x_title='Norm Strike', p='np_exp', c='nc_exp', x_min=-4, x_max=4, y_min=0, y_max=1, yscale='linear'
   )
   plots.plot_premium_by_period(
-    "Norm Premium P/mmean_T/scale_T, Norm Strike (log K - lmean_T)/scale_T, log scale",
+    "Norm Premium P/E[R]/Scale[log R], Norm Strike (log K - E[log R])/Scale[log R], log scale",
     df, x='m_true', x_title='Norm Strike', p='np_exp', c='nc_exp', x_min=-4, x_max=4, y_min=0.005, y_max=1, yscale='log'
   )
 
